@@ -6588,8 +6588,22 @@ console.log('⏸️ Legacy pharmacy_data sync disabled');
                 startSlider();
                 syncLoop();
                 initRealtimeSync();
-                // Restore authenticated Supabase session and reload the tenant catalog on every launch.
-                setTimeout(async function(){ try{ if(supabaseClient){ var sess=await supabaseClient.auth.getSession(); if(sess&&sess.data&&sess.data.session){ CURRENT_PHARMACY_ID=PHARMACY_ID; await loadProductsFromSupabase(); await loadGallerySettings(); applyIdentity(); applyColors(); buildTicker(); } } }catch(e){ console.warn('Startup Supabase restore:',e.message); } }, 250);
+                // Load the current Gallery catalog from Supabase for EVERY device,
+                // not only devices that have a manager Auth session.
+                setTimeout(async function(){
+                    try {
+                        if (supabaseClient) {
+                            CURRENT_PHARMACY_ID = PHARMACY_ID;
+                            await loadProductsFromSupabase();
+                            await loadGallerySettings();
+                            applyIdentity();
+                            applyColors();
+                            buildTicker();
+                        }
+                    } catch(e) {
+                        console.warn('Startup Supabase restore:', e.message);
+                    }
+                }, 250);
                 console.log('✅ App loaded successfully with ' + products.length + ' products');
             } catch (e) {
                 console.error('❌ Load error:', e);
@@ -6614,16 +6628,38 @@ function isAdminPanelOpen() {
            (o && o.classList.contains('open'));
 }
 
+var galleryProductSyncBusy = false;
+
+async function syncGalleryProductsNow() {
+    if (!supabaseClient || galleryProductSyncBusy) return;
+    // Do not replace the manager's current working catalog while a control panel is open.
+    // Saving already writes to Supabase first; the next cycle will pull the saved data.
+    if (isAdminPanelOpen()) return;
+    galleryProductSyncBusy = true;
+    try {
+        await loadProductsFromSupabase();
+    } catch (e) {
+        console.warn('Gallery product sync skipped:', e.message || e);
+    } finally {
+        galleryProductSyncBusy = false;
+    }
+}
+
 function syncLoop() {
-    // المزامنة القديمة مع pharmacy_data متوقفة مؤقتًا
-    // سنستبدلها لاحقًا بمزامنة products + pharmacy_id
-    setTimeout(syncLoop, 10000);
+    // Cross-device product synchronization: every open Gallery window periodically
+    // reloads the products for its own PHARMACY_ID from Supabase.
+    setTimeout(async function() {
+        await syncGalleryProductsNow();
+        syncLoop();
+    }, 5000);
 }
 
 var realtimeChannel = null;
 
 function initRealtimeSync() {
-    console.log('⏸️ Legacy Realtime pharmacy_data disabled');
+    // Product changes are synchronized by the polling loop above.
+    // This keeps the existing tenant isolation and works for public (non-manager) devices.
+    console.log('✅ Gallery product cross-device sync enabled');
 }
 
 // ============================================================
