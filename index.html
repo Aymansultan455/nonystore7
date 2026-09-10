@@ -3355,6 +3355,44 @@
   }
 }
 </style>
+
+<style id="admin-inline-fields-fix">
+/* Compact inline labels for the application manager panel only */
+#adminPanel .ptab-c .fg {
+  display:grid;
+  grid-template-columns:minmax(82px,auto) minmax(0,1fr);
+  align-items:center;
+  column-gap:7px;
+  margin-bottom:5px;
+  width:100%;
+}
+#adminPanel .ptab-c .fg > label {
+  display:block;
+  margin:0;
+  white-space:nowrap;
+  font-size:10px;
+  line-height:1.2;
+}
+#adminPanel .ptab-c .fg > input,
+#adminPanel .ptab-c .fg > select,
+#adminPanel .ptab-c .fg > textarea,
+#adminPanel .ptab-c .fg > .upload-row,
+#adminPanel .ptab-c .fg > .upload-preview,
+#adminPanel .ptab-c .fg > .image-upload-wrap {
+  min-width:0;
+  width:100%;
+}
+#adminPanel .ptab-c .fg > textarea { min-height:42px; }
+#adminPanel .ptab-c .frow { gap:6px; }
+@media (max-width:560px){
+  #adminPanel .ptab-c .fg {
+    grid-template-columns:minmax(72px,auto) minmax(0,1fr);
+    column-gap:5px;
+    margin-bottom:4px;
+  }
+  #adminPanel .ptab-c .fg > label { font-size:9px; }
+}
+</style>
 </head>
 <body>
 
